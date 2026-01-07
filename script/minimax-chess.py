@@ -7,9 +7,6 @@ This implementation demonstrates how minimax works in chess, including:
 - Move ordering for better pruning efficiency
 - Iterative deepening
 - SVG rendering for beautiful board visualization
-- Transposition table (caching)
-- Quiescence search
-- Null move pruning
 """
 
 import chess
@@ -18,7 +15,7 @@ import time
 import webbrowser
 import tempfile
 import os
-from typing import Tuple, Optional, Dict
+from typing import Tuple, Optional
 
 
 class ChessEngine:
@@ -174,12 +171,6 @@ class ChessEngine:
     def __init__(self):
         self.nodes_searched = 0
         self.best_move = None
-        # Transposition table: stores previously evaluated positions
-        # Key: board FEN (position hash), Value: (depth, score, flag)
-        # flag: 'exact' (exact score), 'lower' (alpha cutoff), 'upper' (beta cutoff)
-        self.transposition_table: Dict[str, Tuple[int, float, str]] = {}
-        self.tt_hits = 0
-        self.killer_moves: Dict[int, list] = {}  # Killer move heuristic
 
     def evaluate_position(self, board: chess.Board) -> float:
         """
@@ -235,7 +226,7 @@ class ChessEngine:
 
         return score
 
-    def order_moves(self, board: chess.Board, depth: int = 0) -> list:
+    def order_moves(self, board: chess.Board) -> list:
         """
         Order moves to improve alpha-beta pruning efficiency.
         Try captures, checks, and threats first.
@@ -245,10 +236,6 @@ class ChessEngine:
 
         def move_priority(move):
             priority = 0
-
-            # HIGHEST PRIORITY: Killer moves (non-captures that caused beta cutoffs)
-            if depth in self.killer_moves and move in self.killer_moves[depth]:
-                priority += 9000
 
             # Prioritize captures (MVV-LVA: Most Valuable Victim - Least Valuable Attacker)
             if board.is_capture(move):
@@ -275,54 +262,6 @@ class ChessEngine:
         moves.sort(key=move_priority, reverse=True)
         return moves
 
-    def quiescence_search(
-        self, board: chess.Board, alpha: float, beta: float, is_maximizing: bool
-    ) -> float:
-        """
-        Quiescence search: Continue searching captures to avoid horizon effect.
-        Prevents evaluation at positions where pieces are hanging.
-        """
-        self.nodes_searched += 1
-        stand_pat = self.evaluate_position(board)
-
-        if is_maximizing:
-            if stand_pat >= beta:
-                return beta
-            if alpha < stand_pat:
-                alpha = stand_pat
-
-            # Only search captures
-            for move in board.legal_moves:
-                if board.is_capture(move):
-                    board.push(move)
-                    score = self.quiescence_search(board, alpha, beta, False)
-                    board.pop()
-
-                    if score >= beta:
-                        return beta
-                    if score > alpha:
-                        alpha = score
-
-            return alpha
-        else:
-            if stand_pat <= alpha:
-                return alpha
-            if beta > stand_pat:
-                beta = stand_pat
-
-            for move in board.legal_moves:
-                if board.is_capture(move):
-                    board.push(move)
-                    score = self.quiescence_search(board, alpha, beta, True)
-                    board.pop()
-
-                    if score <= alpha:
-                        return alpha
-                    if score < beta:
-                        beta = score
-
-            return beta
-
     def minimax(
         self,
         board: chess.Board,
@@ -330,14 +269,9 @@ class ChessEngine:
         alpha: float,
         beta: float,
         is_maximizing: bool,
-        original_depth: int = 0,
     ) -> float:
         """
-        Minimax algorithm with alpha-beta pruning + optimizations:
-        - Transposition table (caching)
-        - Quiescence search
-        - Killer move heuristic
-        - Null move pruning
+        Minimax algorithm with alpha-beta pruning.
 
         Args:
             board: Current chess position
@@ -345,127 +279,48 @@ class ChessEngine:
             alpha: Best value for maximizer
             beta: Best value for minimizer
             is_maximizing: True if maximizing (White), False if minimizing (Black)
-            original_depth: Depth from root (for killer moves)
 
         Returns:
             Evaluation score for the position
         """
         self.nodes_searched += 1
-        alpha_orig = alpha
 
-        # Check transposition table
-        board_hash = board.fen()
-        if board_hash in self.transposition_table:
-            tt_depth, tt_score, tt_flag = self.transposition_table[board_hash]
-            if tt_depth >= depth:
-                self.tt_hits += 1
-                if tt_flag == "exact":
-                    return tt_score
-                elif tt_flag == "lower":
-                    alpha = max(alpha, tt_score)
-                elif tt_flag == "upper":
-                    beta = min(beta, tt_score)
-
-                if alpha >= beta:
-                    return tt_score
-
-        # Base case: reached depth limit - use quiescence search
-        if depth == 0:
-            return self.quiescence_search(board, alpha, beta, is_maximizing)
-
-        if board.is_game_over():
+        # Base case: reached depth limit or game over
+        if depth == 0 or board.is_game_over():
             return self.evaluate_position(board)
-
-        # Null move pruning (for non-PV nodes at sufficient depth)
-        if depth >= 3 and not board.is_check() and board.legal_moves.count() > 0:
-            board.push(chess.Move.null())
-            score = -self.minimax(
-                board, depth - 3, -beta, -beta + 1, not is_maximizing, original_depth
-            )
-            board.pop()
-            if score >= beta:
-                return beta
-
-        ply_from_root = original_depth - depth
 
         if is_maximizing:
             # White's turn: maximize score
             max_eval = float("-inf")
-            best_move = None
 
-            for move in self.order_moves(board, ply_from_root):
+            for move in self.order_moves(board):
                 board.push(move)
-                eval_score = self.minimax(
-                    board, depth - 1, alpha, beta, False, original_depth
-                )
+                eval_score = self.minimax(board, depth - 1, alpha, beta, False)
                 board.pop()
 
-                if eval_score > max_eval:
-                    max_eval = eval_score
-                    best_move = move
-
+                max_eval = max(max_eval, eval_score)
                 alpha = max(alpha, eval_score)
 
                 # Beta cutoff: opponent won't allow this branch
                 if beta <= alpha:
-                    # Store killer move (non-capture that caused cutoff)
-                    if not board.is_capture(move):
-                        if ply_from_root not in self.killer_moves:
-                            self.killer_moves[ply_from_root] = []
-                        if move not in self.killer_moves[ply_from_root]:
-                            self.killer_moves[ply_from_root].insert(0, move)
-                            if len(self.killer_moves[ply_from_root]) > 2:
-                                self.killer_moves[ply_from_root].pop()
                     break
-
-            # Store in transposition table (avoid storing infinity)
-            if max_eval > float("-inf") and max_eval < float("inf"):
-                tt_flag = "exact"
-                if max_eval <= alpha_orig:
-                    tt_flag = "upper"
-                elif max_eval >= beta:
-                    tt_flag = "lower"
-                self.transposition_table[board_hash] = (depth, max_eval, tt_flag)
 
             return max_eval
         else:
             # Black's turn: minimize score
             min_eval = float("inf")
-            best_move = None
 
-            for move in self.order_moves(board, ply_from_root):
+            for move in self.order_moves(board):
                 board.push(move)
-                eval_score = self.minimax(
-                    board, depth - 1, alpha, beta, True, original_depth
-                )
+                eval_score = self.minimax(board, depth - 1, alpha, beta, True)
                 board.pop()
 
-                if eval_score < min_eval:
-                    min_eval = eval_score
-                    best_move = move
-
+                min_eval = min(min_eval, eval_score)
                 beta = min(beta, eval_score)
 
                 # Alpha cutoff: opponent won't allow this branch
                 if beta <= alpha:
-                    # Store killer move
-                    if not board.is_capture(move):
-                        if ply_from_root not in self.killer_moves:
-                            self.killer_moves[ply_from_root] = []
-                        if move not in self.killer_moves[ply_from_root]:
-                            self.killer_moves[ply_from_root].insert(0, move)
-                            if len(self.killer_moves[ply_from_root]) > 2:
-                                self.killer_moves[ply_from_root].pop()
                     break
-
-            # Store in transposition table (avoid storing infinity)
-            if min_eval > float("-inf") and min_eval < float("inf"):
-                tt_flag = "exact"
-                if min_eval <= alpha_orig:
-                    tt_flag = "upper"
-                elif min_eval >= beta:
-                    tt_flag = "lower"
-                self.transposition_table[board_hash] = (depth, min_eval, tt_flag)
 
             return min_eval
 
@@ -483,7 +338,6 @@ class ChessEngine:
             Tuple of (best_move, evaluation_score)
         """
         self.nodes_searched = 0
-        self.tt_hits = 0
         best_move = None
         best_value = float("-inf") if board.turn == chess.WHITE else float("inf")
 
@@ -493,7 +347,7 @@ class ChessEngine:
 
         print(f"\nSearching at depth {depth}...")
 
-        moves = self.order_moves(board, 0)
+        moves = self.order_moves(board)
 
         # Ensure we have at least one legal move
         if not moves:
@@ -506,10 +360,8 @@ class ChessEngine:
 
             board.push(move)
 
-            # Search with opposite perspective - pass original depth
-            eval_score = self.minimax(
-                board, depth - 1, alpha, beta, not is_maximizing, depth
-            )
+            # Search with opposite perspective
+            eval_score = self.minimax(board, depth - 1, alpha, beta, not is_maximizing)
 
             board.pop()
 
@@ -547,21 +399,12 @@ class ChessEngine:
 
             best_move = move
 
-            # Calculate cache hit rate
-            cache_hit_rate = (
-                (self.tt_hits / self.nodes_searched * 100)
-                if self.nodes_searched > 0
-                else 0
-            )
-
             print(
                 f"Depth {depth}: {move} | Score: {score/100:.2f} | "
-                f"Nodes: {self.nodes_searched:,} | TT Hits: {cache_hit_rate:.1f}% | "
+                f"Nodes: {self.nodes_searched:,} | "
                 f"Time: {elapsed:.3f}s"
             )
 
-        print(f"{'='*60}")
-        print(f"Total positions in TT: {len(self.transposition_table):,}")
         print(f"{'='*60}\n")
         return best_move
 
@@ -698,18 +541,23 @@ def play_game():
                             from_square = chess.parse_square(user_input[:2])
                             to_square = chess.parse_square(user_input[2:4])
                             piece = board.piece_at(from_square)
-                            
+
                             # Check if it's a pawn reaching the last rank
                             if piece and piece.piece_type == chess.PAWN:
                                 to_rank = chess.square_rank(to_square)
-                                if (piece.color == chess.WHITE and to_rank == 7) or \
-                                   (piece.color == chess.BLACK and to_rank == 0):
-                                    print(f"💡 Hint: This is a pawn promotion! Add promotion piece:")
+                                if (piece.color == chess.WHITE and to_rank == 7) or (
+                                    piece.color == chess.BLACK and to_rank == 0
+                                ):
+                                    print(
+                                        f"💡 Hint: This is a pawn promotion! Add promotion piece:"
+                                    )
                                     print(f"   'q' for Queen (recommended)")
                                     print(f"   'r' for Rook")
                                     print(f"   'b' for Bishop")
                                     print(f"   'n' for Knight")
-                                    print(f"   Example: '{user_input}q' to promote to Queen")
+                                    print(
+                                        f"   Example: '{user_input}q' to promote to Queen"
+                                    )
                         except:
                             pass  # Not a valid square format
             except ValueError:
