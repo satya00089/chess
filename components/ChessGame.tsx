@@ -1,18 +1,32 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { Chess } from 'chess.js';
-import { Chessboard } from 'react-chessboard';
-import { motion, AnimatePresence } from 'framer-motion';
-import { EngineType, EngineResult, AnalyzedMove, NodeAnalysis } from '@/lib/types';
-import { getEngine } from '@/lib/engines';
-import { AnalysisPanel } from './AnalysisPanel';
-import { ControlPanel } from './ControlPanel';
-import { DebugVisualization } from './DebugVisualization';
+import React, { useState, useCallback, useEffect, useRef } from "react";
+import { Chess } from "chess.js";
+import { Chessboard } from "react-chessboard";
+import type { PieceDropHandlerArgs } from "react-chessboard";
+import { motion } from "framer-motion";
+import {
+  EngineType,
+  EngineResult,
+} from "@/lib/types";
+import { getEngine } from "@/lib/engines";
+import { AnalysisPanel } from "./AnalysisPanel";
+import { ControlPanel } from "./ControlPanel";
+import { DebugVisualization } from "./DebugVisualization";
 
 export default function ChessGame() {
-  const [game, setGame] = useState(new Chess());
-  const [engineType, setEngineType] = useState<EngineType>('minimax');
+  // Use ref for Chess instance to avoid stale closures. Lazily initialize the ref
+  const gameRef = useRef<Chess | null>(null);
+
+  // Helper to get the Chess instance; lazily creates it when needed.
+  function getGame() {
+    gameRef.current ??= new Chess();
+    return gameRef.current;
+  }
+
+  // Store only the position string in state to trigger re-renders
+  const [gamePosition, setGamePosition] = useState(() => new Chess().fen());
+  const [engineType, setEngineType] = useState<EngineType>("minimax");
   const [depth, setDepth] = useState(3);
   const [isThinking, setIsThinking] = useState(false);
   const [engineResult, setEngineResult] = useState<EngineResult | null>(null);
@@ -21,6 +35,13 @@ export default function ChessGame() {
   const [currentNodeIndex, setCurrentNodeIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    // Ensure the ref is initialized on mount and log initial state
+    const game = getGame();
+    console.log("♟️ ChessGame component mounted");
+    console.log("📦 Initial game position:", game.fen());
+  }, []);
 
   const makeAIMove = useCallback(async () => {
     if (isThinking) return;
@@ -31,6 +52,7 @@ export default function ChessGame() {
     setIsAnimating(true);
 
     const engine = getEngine(engineType);
+    const game = getGame();
     const gameCopy = new Chess(game.fen());
 
     const result = await engine.findBestMove(gameCopy, {
@@ -42,57 +64,102 @@ export default function ChessGame() {
     setEngineResult(result);
 
     if (result.bestMove) {
-      const newGame = new Chess(game.fen());
-      newGame.move({
+      game.move({
         from: result.bestMove.from,
         to: result.bestMove.to,
-        promotion: result.bestMove.promotion as any,
+        promotion: result.bestMove.promotion,
       });
-      setGame(newGame);
+      setGamePosition(game.fen());
     }
 
     setIsThinking(false);
     setIsAnimating(false);
-  }, [game, engineType, depth, isThinking, debugMode, animationSpeed]);
+  }, [engineType, depth, isThinking, debugMode, animationSpeed]);
 
-  const onPieceDrop = (sourceSquare: string, targetSquare: string, piece: string) => {
+  const onPieceDrop = (dropInfo: PieceDropHandlerArgs) => {
+    console.log("🎯 onPieceDrop called - dropInfo:", dropInfo);
+
     try {
-      const gameCopy = new Chess(game.fen());
-      const move = gameCopy.move({
+      const { sourceSquare, targetSquare } = dropInfo;
+
+      // If dropped off-board, react-chessboard may provide null target
+      if (!targetSquare) {
+        console.log("➡️ Dropped off-board, cancelling move");
+        return false;
+      }
+
+      const game = getGame();
+      console.log("📍 Current position before move:", game.fen());
+      console.log("🎮 Game turn:", game.turn());
+
+      console.log("🎯 Extracted squares:", { sourceSquare, targetSquare });
+
+      const move = game.move({
         from: sourceSquare,
         to: targetSquare,
-        promotion: piece[1].toLowerCase() ?? 'q',
+        promotion: "q", // always promote to queen for simplicity
       });
 
-      if (move === null) return false;
+      if (move === null) {
+        console.log("❌ Move returned null - invalid move");
+        return false;
+      }
 
-      setGame(gameCopy);
-      
+      console.log("✅ Move successful:", move);
+      console.log("📍 New position after move:", game.fen());
+
+      setGamePosition(game.fen());
+
       // AI makes a move after player's move
       setTimeout(() => {
+        console.log("🤖 Triggering AI move...");
         makeAIMove();
       }, 300);
 
       return true;
     } catch (error) {
+      console.error("💥 Error in onPieceDrop:", error);
       return false;
     }
   };
 
   const resetGame = () => {
-    setGame(new Chess());
-    setEngineResult(null);
+    const game = getGame();
+    game.reset();
+    setGamePosition(game.fen());
     setCurrentNodeIndex(0);
     setIsAnimating(false);
     setIsPaused(false);
   };
 
   const getCurrentPosition = (): string => {
-    if (debugMode && engineResult && engineResult.nodeHistory.length > 0 && isAnimating) {
-      const clampedIndex = Math.min(currentNodeIndex, engineResult.nodeHistory.length - 1);
-      return engineResult.nodeHistory[clampedIndex]?.position || game.fen();
+    if (
+      debugMode &&
+      engineResult &&
+      engineResult.nodeHistory.length > 0 &&
+      isAnimating
+    ) {
+      const clampedIndex = Math.min(
+        currentNodeIndex,
+        engineResult.nodeHistory.length - 1,
+      );
+      return engineResult.nodeHistory[clampedIndex]?.position || gamePosition;
     }
-    return game.fen();
+    return gamePosition;
+  };
+
+  // Build board options as `any` so we can include runtime-only toggles
+  const boardOptions = {
+    position: getCurrentPosition(),
+    onPieceDrop,
+    // toggle dragging at runtime (react-chessboard type may not include this key)
+    arePiecesDraggable: !isThinking && !isAnimating,
+    customBoardStyle: {
+      borderRadius: "8px",
+      boxShadow: "0 8px 16px rgba(0, 0, 0, 0.4)",
+    },
+    customDarkSquareStyle: { backgroundColor: "#4a5568" },
+    customLightSquareStyle: { backgroundColor: "#cbd5e0" },
   };
 
   useEffect(() => {
@@ -103,18 +170,28 @@ export default function ChessGame() {
         }, animationSpeed);
         return () => clearTimeout(timer);
       } else {
-        setIsAnimating(false);
+        // Avoid calling setState synchronously inside the effect
+        // Schedule it asynchronously to prevent cascading renders
+        const finishTimer = setTimeout(() => setIsAnimating(false), 0);
+        return () => clearTimeout(finishTimer);
       }
     }
-  }, [currentNodeIndex, debugMode, isAnimating, engineResult, animationSpeed, isPaused]);
+  }, [
+    currentNodeIndex,
+    debugMode,
+    isAnimating,
+    engineResult,
+    animationSpeed,
+    isPaused,
+  ]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4">
-      <div className="max-w-[1800px] mx-auto">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4">
+      <div className="max-w-450 mx-auto">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-4xl font-bold text-center mb-8 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent"
+          className="text-4xl font-bold text-center mb-8 bg-linear-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent"
         >
           Chess AI Analyzer
         </motion.h1>
@@ -127,18 +204,8 @@ export default function ChessGame() {
             className="lg:col-span-2"
           >
             <div className="bg-slate-800 rounded-lg shadow-2xl p-6 border border-slate-700">
-              <div className="max-w-[600px] mx-auto">
-                <Chessboard
-                  position={getCurrentPosition()}
-                  onPieceDrop={onPieceDrop}
-                  boardWidth={600}
-                  customBoardStyle={{
-                    borderRadius: '8px',
-                    boxShadow: '0 8px 16px rgba(0, 0, 0, 0.4)',
-                  }}
-                  customDarkSquareStyle={{ backgroundColor: '#4a5568' }}
-                  customLightSquareStyle={{ backgroundColor: '#cbd5e0' }}
-                />
+              <div className="max-w-150 mx-auto" style={{ width: 600 }}>
+                <Chessboard options={boardOptions} />
               </div>
 
               {/* Control Panel */}
@@ -153,8 +220,8 @@ export default function ChessGame() {
                 setAnimationSpeed={setAnimationSpeed}
                 isThinking={isThinking}
                 resetGame={resetGame}
-                gameOver={game.isGameOver()}
-                turn={game.turn()}
+                gameOver={new Chess(getCurrentPosition()).isGameOver()}
+                turn={new Chess(getCurrentPosition()).turn()}
               />
 
               {/* Debug Visualization */}
