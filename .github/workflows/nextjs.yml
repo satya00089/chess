@@ -1,5 +1,5 @@
 # Workflow for building and deploying the Chess AI Next.js app to GitHub Pages
-# Deploys to https://satya00089.github.io/chess-ai
+# Deploys to https://satya00089.github.io/chess
 name: Deploy Next.js site to Pages
 
 on:
@@ -51,12 +51,6 @@ jobs:
         with:
           node-version: "20"
           cache: ${{ steps.detect-package-manager.outputs.manager }}
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-        with:
-          # Automatically configures Next.js for GitHub Pages deployment with basePath /chess-ai
-          # Note: basePath is already configured in next.config.ts
-          static_site_generator: next
       - name: Restore cache
         uses: actions/cache@v4
         with:
