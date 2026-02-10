@@ -5,10 +5,7 @@ import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import type { PieceDropHandlerArgs } from "react-chessboard";
 import { motion } from "framer-motion";
-import {
-  EngineType,
-  EngineResult,
-} from "@/lib/types";
+import { EngineType, EngineResult } from "@/lib/types";
 import { getEngine } from "@/lib/engines";
 import { AnalysisPanel } from "./AnalysisPanel";
 import { ControlPanel } from "./ControlPanel";

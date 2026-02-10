@@ -1,14 +1,20 @@
-import { Chess, Move } from 'chess.js';
-import { ChessEngine, EngineResult, AnalyzedMove, NodeAnalysis, EngineConfig } from '../types';
-import { evaluateBoard } from '../evaluation';
+import { Chess, Move } from "chess.js";
+import {
+  ChessEngine,
+  EngineResult,
+  AnalyzedMove,
+  NodeAnalysis,
+  EngineConfig,
+} from "../types";
+import { evaluateBoard } from "../evaluation";
 
 async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export class MinimaxEngine implements ChessEngine {
-  name = 'Minimax';
-  description = 'Basic minimax algorithm without optimizations';
+  name = "Minimax";
+  description = "Basic minimax algorithm without optimizations";
 
   async findBestMove(game: Chess, config: EngineConfig): Promise<EngineResult> {
     const analysis: AnalyzedMove[] = [];
@@ -28,7 +34,7 @@ export class MinimaxEngine implements ChessEngine {
         if (game.isCheckmate()) {
           // If side to move is checkmated, that's bad for that side.
           // Return -Infinity if White is to move (White lost), +Infinity if Black is to move (Black lost)
-          return game.turn() === 'w' ? -Infinity : Infinity;
+          return game.turn() === "w" ? -Infinity : Infinity;
         }
         return 0;
       }
@@ -50,7 +56,7 @@ export class MinimaxEngine implements ChessEngine {
         return v;
       };
 
-      const isWhiteToMove = game.turn() === 'w';
+      const isWhiteToMove = game.turn() === "w";
 
       if (isWhiteToMove) {
         let maxEval = -Infinity;
@@ -71,7 +77,7 @@ export class MinimaxEngine implements ChessEngine {
 
     const moves = game.moves({ verbose: true });
     let bestMove: AnalyzedMove | null = null;
-    const engineIsWhite = game.turn() === 'w';
+    const engineIsWhite = game.turn() === "w";
     let bestValue = engineIsWhite ? -Infinity : Infinity;
 
     for (const move of moves) {

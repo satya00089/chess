@@ -1,14 +1,21 @@
-import { Chess, Move } from 'chess.js';
-import { ChessEngine, EngineResult, AnalyzedMove, NodeAnalysis, EngineConfig } from '../types';
-import { evaluateBoard } from '../evaluation';
+import { Chess, Move } from "chess.js";
+import {
+  ChessEngine,
+  EngineResult,
+  AnalyzedMove,
+  NodeAnalysis,
+  EngineConfig,
+} from "../types";
+import { evaluateBoard } from "../evaluation";
 
 async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export class MinimaxAlphaBetaEngine implements ChessEngine {
-  name = 'Minimax with Alpha-Beta Pruning';
-  description = 'Optimized minimax using alpha-beta pruning to reduce nodes evaluated';
+  name = "Minimax with Alpha-Beta Pruning";
+  description =
+    "Optimized minimax using alpha-beta pruning to reduce nodes evaluated";
 
   async findBestMove(game: Chess, config: EngineConfig): Promise<EngineResult> {
     const analysis: AnalyzedMove[] = [];
@@ -20,7 +27,7 @@ export class MinimaxAlphaBetaEngine implements ChessEngine {
       alpha: number,
       beta: number,
       isMaximizing: boolean,
-      game: Chess
+      game: Chess,
     ): Promise<number> => {
       nodesEvaluated++;
 
@@ -41,7 +48,7 @@ export class MinimaxAlphaBetaEngine implements ChessEngine {
         let maxEval = -Infinity;
         for (const move of moves) {
           game.move(move);
-          
+
           if (config.debugMode) {
             nodeHistory.push({
               move: this.convertToAnalyzedMove(move, 0),
@@ -56,7 +63,7 @@ export class MinimaxAlphaBetaEngine implements ChessEngine {
           game.undo();
           maxEval = Math.max(maxEval, eval_);
           alpha = Math.max(alpha, eval_);
-          
+
           if (beta <= alpha) {
             break; // Beta cutoff
           }
@@ -66,7 +73,7 @@ export class MinimaxAlphaBetaEngine implements ChessEngine {
         let minEval = Infinity;
         for (const move of moves) {
           game.move(move);
-          
+
           if (config.debugMode) {
             nodeHistory.push({
               move: this.convertToAnalyzedMove(move, 0),
@@ -81,7 +88,7 @@ export class MinimaxAlphaBetaEngine implements ChessEngine {
           game.undo();
           minEval = Math.min(minEval, eval_);
           beta = Math.min(beta, eval_);
-          
+
           if (beta <= alpha) {
             break; // Alpha cutoff
           }
@@ -96,7 +103,13 @@ export class MinimaxAlphaBetaEngine implements ChessEngine {
 
     for (const move of moves) {
       game.move(move);
-      const value = await minimax(config.depth - 1, -Infinity, Infinity, false, game);
+      const value = await minimax(
+        config.depth - 1,
+        -Infinity,
+        Infinity,
+        false,
+        game,
+      );
       game.undo();
 
       const analyzedMove = this.convertToAnalyzedMove(move, value);

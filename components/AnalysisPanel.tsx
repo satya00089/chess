@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { EngineResult } from '@/lib/types';
+import React from "react";
+import { motion } from "framer-motion";
+import { EngineResult } from "@/lib/types";
 
 interface AnalysisPanelProps {
   engineResult: EngineResult | null;
@@ -10,7 +10,11 @@ interface AnalysisPanelProps {
   engineType: string;
 }
 
-export function AnalysisPanel({ engineResult, isThinking, engineType }: AnalysisPanelProps) {
+export function AnalysisPanel({
+  engineResult,
+  isThinking,
+  engineType,
+}: AnalysisPanelProps) {
   return (
     <div className="bg-slate-800 rounded-lg shadow-2xl p-6 border border-slate-700 h-full">
       <h2 className="text-2xl font-bold mb-4 text-blue-400">Move Analysis</h2>
@@ -24,7 +28,7 @@ export function AnalysisPanel({ engineResult, isThinking, engineType }: Analysis
           <div className="flex flex-col items-center">
             <motion.div
               animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full"
             />
             <p className="mt-4 text-slate-400">Analyzing positions...</p>
@@ -40,7 +44,9 @@ export function AnalysisPanel({ engineResult, isThinking, engineType }: Analysis
         >
           {/* Engine Stats */}
           <div className="bg-slate-900 rounded-lg p-4 border border-slate-600">
-            <h3 className="text-lg font-semibold mb-3 text-purple-400">Statistics</h3>
+            <h3 className="text-lg font-semibold mb-3 text-purple-400">
+              Statistics
+            </h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-400">Engine:</span>
@@ -77,8 +83,8 @@ export function AnalysisPanel({ engineResult, isThinking, engineType }: Analysis
                   transition={{ delay: index * 0.02 }}
                   className={`p-3 rounded-lg border ${
                     index === 0
-                      ? 'bg-green-900/30 border-green-500 shadow-lg shadow-green-500/20'
-                      : 'bg-slate-900 border-slate-600 hover:border-slate-500'
+                      ? "bg-green-900/30 border-green-500 shadow-lg shadow-green-500/20"
+                      : "bg-slate-900 border-slate-600 hover:border-slate-500"
                   } transition-all`}
                 >
                   <div className="flex items-center justify-between">
@@ -94,13 +100,13 @@ export function AnalysisPanel({ engineResult, isThinking, engineType }: Analysis
                       <span
                         className={`font-semibold ${
                           move.score > 0
-                            ? 'text-green-400'
+                            ? "text-green-400"
                             : move.score < 0
-                            ? 'text-red-400'
-                            : 'text-slate-400'
+                              ? "text-red-400"
+                              : "text-slate-400"
                         }`}
                       >
-                        {move.score > 0 ? '+' : ''}
+                        {move.score > 0 ? "+" : ""}
                         {move.score.toFixed(0)}
                       </span>
                       <span className="text-xs text-slate-500">
@@ -122,9 +128,7 @@ export function AnalysisPanel({ engineResult, isThinking, engineType }: Analysis
 
       {!engineResult && !isThinking && (
         <div className="flex items-center justify-center h-64 text-slate-500">
-          <p className="text-center">
-            Make a move to see AI analysis
-          </p>
+          <p className="text-center">Make a move to see AI analysis</p>
         </div>
       )}
     </div>
