@@ -6,7 +6,6 @@ import { Chessboard } from "react-chessboard";
 import type { PieceDropHandlerArgs } from "react-chessboard";
 import { motion } from "framer-motion";
 import { PiGithubLogoDuotone } from "react-icons/pi";
-import { SiLichess } from "react-icons/si";
 import { EngineType, EngineResult } from "@/lib/types";
 import { getEngine } from "@/lib/engines";
 import { AnalysisPanel } from "./AnalysisPanel";
@@ -201,27 +200,14 @@ export default function ChessGame() {
           <PiGithubLogoDuotone className="w-7 h-7 text-white" />
         </motion.a>
 
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-4xl font-bold text-center mb-8 text-white flex items-center justify-center"
-        >
-          <SiLichess className="w-8 h-8 text-white" />
-          hess AI
-        </motion.h1>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Side - Chess Board */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-2"
+            className="lg:col-span-6"
           >
-            <div className="bg-slate-800 rounded-lg shadow-2xl p-6 border border-slate-700">
-              <div className="max-w-150 mx-auto" style={{ width: 600 }}>
-                <Chessboard options={boardOptions} />
-              </div>
-
+            <div className="bg-slate-800 rounded-lg shadow-2xl p-3 border border-slate-700">
               {/* Control Panel */}
               <ControlPanel
                 engineType={engineType}
@@ -249,6 +235,9 @@ export default function ChessGame() {
                   setIsPaused={setIsPaused}
                 />
               )}
+              <div className="max-w-150 mx-auto" style={{ width: "calc(100vh - 130px)", height: "calc(100vh - 130px)" }}>
+                <Chessboard options={boardOptions} />
+              </div>
             </div>
           </motion.div>
 
@@ -256,7 +245,7 @@ export default function ChessGame() {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-1"
+            className="lg:col-span-6"
           >
             <AnalysisPanel
               engineResult={engineResult}
