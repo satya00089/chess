@@ -1,6 +1,6 @@
-import { Chess } from 'chess.js';
+import { Chess } from "chess.js";
 
-export type EngineType = 'minimax' | 'minimax-alpha-beta';
+export type EngineType = "minimax" | "minimax-alpha-beta";
 
 export interface AnalyzedMove {
   move: string;

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { NodeAnalysis } from '@/lib/types';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { NodeAnalysis } from "@/lib/types";
 
 interface DebugVisualizationProps {
   nodeHistory: NodeAnalysis[];
@@ -23,7 +23,8 @@ export function DebugVisualization({
 }: DebugVisualizationProps) {
   if (nodeHistory.length === 0) return null;
 
-  const currentNode = nodeHistory[Math.min(currentNodeIndex, nodeHistory.length - 1)];
+  const currentNode =
+    nodeHistory[Math.min(currentNodeIndex, nodeHistory.length - 1)];
 
   return (
     <motion.div
@@ -43,7 +44,7 @@ export function DebugVisualization({
               onClick={() => setIsPaused(!isPaused)}
               className="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded text-sm font-medium"
             >
-              {isPaused ? '▶ Resume' : '⏸ Pause'}
+              {isPaused ? "▶ Resume" : "⏸ Pause"}
             </motion.button>
           )}
           <span className="text-sm text-slate-400">
@@ -121,14 +122,19 @@ export function DebugVisualization({
 
       {/* Depth Distribution */}
       <div className="mt-4 pt-4 border-t border-slate-700">
-        <h4 className="text-sm font-medium text-slate-400 mb-2">Depth Distribution</h4>
+        <h4 className="text-sm font-medium text-slate-400 mb-2">
+          Depth Distribution
+        </h4>
         <div className="flex space-x-1 h-12 items-end">
           {Array.from({ length: 10 }, (_, depth) => {
-            const nodesAtDepth = nodeHistory.filter((n) => n.depth === depth).length;
+            const nodesAtDepth = nodeHistory.filter(
+              (n) => n.depth === depth,
+            ).length;
             const maxNodes = Math.max(
-              ...Array.from({ length: 10 }, (_, d) =>
-                nodeHistory.filter((n) => n.depth === d).length
-              )
+              ...Array.from(
+                { length: 10 },
+                (_, d) => nodeHistory.filter((n) => n.depth === d).length,
+              ),
             );
             const height = maxNodes > 0 ? (nodesAtDepth / maxNodes) * 100 : 0;
 
@@ -138,7 +144,7 @@ export function DebugVisualization({
                 initial={{ height: 0 }}
                 animate={{ height: `${height}%` }}
                 className={`flex-1 rounded-t ${
-                  currentNode.depth === depth ? 'bg-purple-500' : 'bg-slate-700'
+                  currentNode.depth === depth ? "bg-purple-500" : "bg-slate-700"
                 }`}
                 title={`Depth ${depth}: ${nodesAtDepth} nodes`}
               />

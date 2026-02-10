@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { EngineType } from '@/lib/types';
+import React from "react";
+import { motion } from "framer-motion";
+import { EngineType } from "@/lib/types";
 
 interface ControlPanelProps {
   engineType: EngineType;
@@ -16,7 +16,7 @@ interface ControlPanelProps {
   isThinking: boolean;
   resetGame: () => void;
   gameOver: boolean;
-  turn: 'w' | 'b';
+  turn: "w" | "b";
 }
 
 export function ControlPanel({
@@ -41,7 +41,7 @@ export function ControlPanel({
           <div>
             <span className="text-slate-400 text-sm">Current Turn:</span>
             <span className="ml-2 text-white font-semibold">
-              {turn === 'w' ? 'White (You)' : 'Black (AI)'}
+              {turn === "w" ? "White (You)" : "Black (AI)"}
             </span>
           </div>
           {gameOver && (
@@ -68,7 +68,9 @@ export function ControlPanel({
           className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
         >
           <option value="minimax">Minimax (Basic)</option>
-          <option value="minimax-alpha-beta">Minimax + Alpha-Beta Pruning</option>
+          <option value="minimax-alpha-beta">
+            Minimax + Alpha-Beta Pruning
+          </option>
         </select>
       </div>
 
@@ -110,7 +112,7 @@ export function ControlPanel({
         {debugMode && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             className="mt-4 pt-4 border-t border-slate-700"
           >
             <label className="block text-sm font-medium text-slate-400 mb-2">
