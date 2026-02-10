@@ -183,7 +183,21 @@ export default function ChessGame() {
   ]);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 relative">
+      {/* Animated GitHub repo link (top-right) */}
+      <motion.a
+        href="https://github.com/satya00089/chess"
+        target="_blank"
+        rel="noopener noreferrer"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ scale: 1.08, rotate: 10 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className="absolute right-4 top-4 flex items-center gap-2 bg-white/5 hover:bg-white/10 rounded-full py-1 px-2 backdrop-blur"
+      >
+        <img src="/chess.png" alt="repo" className="w-8 h-8 rounded" />
+        <span className="text-sm font-medium">View on GitHub</span>
+      </motion.a>
       <div className="max-w-450 mx-auto">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
