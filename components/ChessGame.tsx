@@ -5,6 +5,8 @@ import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import type { PieceDropHandlerArgs } from "react-chessboard";
 import { motion } from "framer-motion";
+import { PiGithubLogoDuotone } from "react-icons/pi";
+import { SiLichess } from "react-icons/si";
 import { EngineType, EngineResult } from "@/lib/types";
 import { getEngine } from "@/lib/engines";
 import { AnalysisPanel } from "./AnalysisPanel";
@@ -184,27 +186,28 @@ export default function ChessGame() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 relative">
-      {/* Animated GitHub repo link (top-right) */}
-      <motion.a
-        href="https://github.com/satya00089/chess"
-        target="_blank"
-        rel="noopener noreferrer"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        whileHover={{ scale: 1.08, rotate: 10 }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className="absolute right-4 top-4 flex items-center gap-2 bg-white/5 hover:bg-white/10 rounded-full py-1 px-2 backdrop-blur"
-      >
-        <img src="/chess.png" alt="repo" className="w-8 h-8 rounded" />
-        <span className="text-sm font-medium">View on GitHub</span>
-      </motion.a>
       <div className="max-w-450 mx-auto">
+        <motion.a
+          href="https://github.com/satya00089/chess"
+          target="_blank"
+          rel="noopener noreferrer"
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileHover={{ scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="absolute right-4 top-4 flex items-center gap-2 bg-white/5 hover:bg-white/10 rounded-full py-2 px-2 backdrop-blur"
+          aria-label="Open repository on GitHub"
+        >
+          <PiGithubLogoDuotone className="w-7 h-7 text-white" />
+        </motion.a>
+
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-4xl font-bold text-center mb-8 bg-linear-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent"
+          className="text-4xl font-bold text-center mb-8 text-white flex items-center justify-center"
         >
-          Chess AI Analyzer
+          <SiLichess className="w-8 h-8 text-white" />
+          hess AI
         </motion.h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
