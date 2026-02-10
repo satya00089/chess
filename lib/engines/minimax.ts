@@ -71,9 +71,8 @@ export class MinimaxEngine implements ChessEngine {
 
     const moves = game.moves({ verbose: true });
     let bestMove: AnalyzedMove | null = null;
-    let bestValue = -Infinity;
-
     const engineIsWhite = game.turn() === 'w';
+    let bestValue = engineIsWhite ? -Infinity : Infinity;
 
     for (const move of moves) {
       game.move(move);
@@ -83,14 +82,23 @@ export class MinimaxEngine implements ChessEngine {
       const analyzedMove = this.convertToAnalyzedMove(move, value);
       analysis.push(analyzedMove);
 
+      // Set first move as default if not set
+      if (bestMove === null) {
+        bestMove = analyzedMove;
+        bestValue = value;
+        continue;
+      }
+
       if (engineIsWhite) {
         if (value > bestValue) {
           bestValue = value;
           bestMove = analyzedMove;
         }
-      } else if (value < bestValue) {
-        bestValue = value;
-        bestMove = analyzedMove;
+      } else {
+        if (value < bestValue) {
+          bestValue = value;
+          bestMove = analyzedMove;
+        }
       }
     }
 
