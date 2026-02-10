@@ -15,31 +15,31 @@ export class MinimaxEngine implements ChessEngine {
     const nodeHistory: NodeAnalysis[] = [];
     let nodesEvaluated = 0;
 
-    const minimax = async (
-      depth: number,
-      isMaximizing: boolean,
-      game: Chess
-    ): Promise<number> => {
+    const minimax = async (depth: number, game: Chess): Promise<number> => {
       nodesEvaluated++;
 
       if (depth === 0) {
-        return evaluateBoard(game);
+        return evaluateBoard(game); // returns value positive for White
       }
 
       const moves = game.moves({ verbose: true });
 
       if (moves.length === 0) {
         if (game.isCheckmate()) {
-          return isMaximizing ? -Infinity : Infinity;
+          // If side to move is checkmated, that's bad for that side.
+          // Return -Infinity if White is to move (White lost), +Infinity if Black is to move (Black lost)
+          return game.turn() === 'w' ? -Infinity : Infinity;
         }
         return 0;
       }
 
-      if (isMaximizing) {
+      const isWhiteToMove = game.turn() === 'w';
+
+      if (isWhiteToMove) {
         let maxEval = -Infinity;
         for (const move of moves) {
           game.move(move);
-          
+
           if (config.debugMode) {
             nodeHistory.push({
               move: this.convertToAnalyzedMove(move, 0),
@@ -50,7 +50,7 @@ export class MinimaxEngine implements ChessEngine {
             await delay(config.animationSpeed);
           }
 
-          const eval_ = await minimax(depth - 1, false, game);
+          const eval_ = await minimax(depth - 1, game);
           game.undo();
           maxEval = Math.max(maxEval, eval_);
         }
@@ -59,7 +59,7 @@ export class MinimaxEngine implements ChessEngine {
         let minEval = Infinity;
         for (const move of moves) {
           game.move(move);
-          
+
           if (config.debugMode) {
             nodeHistory.push({
               move: this.convertToAnalyzedMove(move, 0),
@@ -70,7 +70,7 @@ export class MinimaxEngine implements ChessEngine {
             await delay(config.animationSpeed);
           }
 
-          const eval_ = await minimax(depth - 1, true, game);
+          const eval_ = await minimax(depth - 1, game);
           game.undo();
           minEval = Math.min(minEval, eval_);
         }
@@ -82,17 +82,26 @@ export class MinimaxEngine implements ChessEngine {
     let bestMove: AnalyzedMove | null = null;
     let bestValue = -Infinity;
 
+    const engineIsWhite = game.turn() === 'w';
+
     for (const move of moves) {
       game.move(move);
-      const value = await minimax(config.depth - 1, false, game);
+      const value = await minimax(config.depth - 1, game); // value is White-perspective
       game.undo();
 
       const analyzedMove = this.convertToAnalyzedMove(move, value);
       analysis.push(analyzedMove);
 
-      if (value > bestValue) {
-        bestValue = value;
-        bestMove = analyzedMove;
+      if (engineIsWhite) {
+        if (value > bestValue) {
+          bestValue = value;
+          bestMove = analyzedMove;
+        }
+      } else {
+        if (value < bestValue) {
+          bestValue = value;
+          bestMove = analyzedMove;
+        }
       }
     }
 
