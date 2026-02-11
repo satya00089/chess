@@ -6,8 +6,6 @@ import { GiChessKing } from "react-icons/gi";
 import { MdRestartAlt } from "react-icons/md";
 import { BsBugFill } from "react-icons/bs";
 import { IoSpeedometer } from "react-icons/io5";
-import { motion } from "framer-motion";
-import { SiLichess } from "react-icons/si";
 
 interface TooltipProps {
   readonly text: string;
@@ -72,17 +70,9 @@ export function ControlPanel({
     <div className="mb-2">
       <div className="bg-slate-900/80 backdrop-blur rounded-xl shadow-xl border border-slate-700/50 p-3">
         <div className="flex flex-wrap items-center gap-3">
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-xl font-bold text-center text-white flex items-center justify-center"
-          >
-            <SiLichess className="w-8 h-8 text-white" />
-            hess AI
-          </motion.h1>
           {/* Game Status & Reset Group */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/60 rounded-lg border border-slate-600/40">
+            {/* <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/60 rounded-lg border border-slate-600/40">
               <GiChessKing className="text-amber-400" size={16} />
               <span className="text-xs text-slate-300">
                 {turn === "w" ? "White to move" : "Black to move"}
@@ -92,7 +82,7 @@ export function ControlPanel({
                   Game Over
                 </span>
               )}
-            </div>
+            </div> */}
 
             <Tooltip text="Reset Game">
               <button
